@@ -208,7 +208,7 @@ class TrainConfig:
     trainer: str  # One of the trainers
     trainer_kwargs: Dict[str, Any] = field(default_factory=dict)  # Extra keyword arguments for the trainer
 
-    project_name: str = "trlx"
+    project_name: str = "test-trlx"
     entity_name: Optional[str] = None
     group_name: Optional[str] = None
 

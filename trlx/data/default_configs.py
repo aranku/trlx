@@ -16,13 +16,14 @@ def default_ppo_config():
     return TRLConfig(
         train=TrainConfig(
             seq_length=1024,
-            epochs=100,
+            epochs=1000,
             total_steps=10000,
-            batch_size=32,
+            batch_size=128,
             checkpoint_interval=10000,
             eval_interval=100,
             pipeline="PromptPipeline",
             trainer="AcceleratePPOTrainer",
+            project_name="test-trlx",
         ),
         model=ModelConfig(model_path="lvwerra/gpt2-imdb", num_layers_unfrozen=2),
         tokenizer=TokenizerConfig(tokenizer_path="gpt2", truncation_side="right"),
