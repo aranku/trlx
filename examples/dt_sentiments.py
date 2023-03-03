@@ -17,9 +17,14 @@ def main(hparams={}):
     # Merge sweep config with default config if given
     config = TRLConfig.update(default_sft_config().to_dict(), hparams)
 
-    imdb = load_dataset("imdb", split="train+test")
-    # Finetune on only positive reviews
-    imdb = imdb.filter(lambda sample: sample["label"] == 1)
+    def prepend_label(sample):
+        if sample["label"] == 1:
+            sample["text"] = "[POS] " + sample["text"]
+        else:
+            sample["text"] = "[NEG] " + sample["text"]
+        return sample
+
+    imdb = load_dataset("imdb", split="train+test").map(prepend_label)
 
     sentiment_fn = pipeline(
         "sentiment-analysis",
@@ -31,12 +36,13 @@ def main(hparams={}):
     )
 
     def metric_fn(samples: List[str], **kwargs) -> Dict[str, List[float]]:
+        samples = list(map(lambda x: x.split("] ")[-1], samples))
         sentiments = list(map(get_positive_score, sentiment_fn(samples)))
         return {"sentiments": sentiments}
 
     trainer = trlx.train(
         samples=imdb["text"],
-        eval_prompts=["I don't know much about Hungarian underground"] * 128,
+        eval_prompts=["[POS] I don't know much about Hungarian underground"] * 128,
         metric_fn=metric_fn,
         config=config,
     )
