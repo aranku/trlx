@@ -1,5 +1,5 @@
 from trlx.models.modeling_ilql import ILQLConfig
-from trlx.models.modeling_ppo import PPOConfig
+from trlx.models.modeling_ppo import ODTConfig, PPOConfig
 from trlx.trainer.accelerate_sft_trainer import SFTConfig
 
 from .configs import (
@@ -57,6 +57,46 @@ def default_ppo_config():
     )
 
 
+def default_odt_config():
+    return TRLConfig(
+        train=TrainConfig(
+            seq_length=1024,
+            epochs=1000,
+            total_steps=10000,
+            batch_size=128,
+            checkpoint_interval=10000,
+            eval_interval=100,
+            pipeline="PromptPipeline",
+            trainer="AccelerateODTTrainer",
+            checkpoint_dir="ckpts/odt"
+        ),
+        model=ModelConfig(model_path="/home/ubuntu/trlx/examples/reviews-odt-1", num_layers_unfrozen=-1),
+        tokenizer=TokenizerConfig(tokenizer_path="/home/ubuntu/trlx/examples/reviews-odt-1", truncation_side="right"),
+        optimizer=OptimizerConfig(
+            name="adamw", kwargs=dict(lr=1.0e-4, betas=(0.9, 0.95), eps=1.0e-8, weight_decay=1.0e-6)
+        ),
+        scheduler=SchedulerConfig(
+            name="cosine_annealing", kwargs=dict(T_max=10000, eta_min=1.0e-4)  # train.total_steps
+        ),
+        method=ODTConfig(
+            name="ODTConfig",
+            num_rollouts=2048,
+            chunk_size=1024,
+            odt_epochs=1,
+            reward_percentile=0.1,
+            store_size=6144,
+            ref_mean=None,
+            ref_std=None,
+            gen_kwargs=dict(
+                max_new_tokens=40,
+                top_k=0,
+                top_p=1.0,
+                do_sample=True,
+            ),
+        ),
+    )
+
+
 def default_ilql_config():
     return TRLConfig(
         train=TrainConfig(
@@ -96,10 +136,10 @@ def default_sft_config():
     return TRLConfig(
         train=TrainConfig(
             seq_length=1024,
-            epochs=1000,
-            total_steps=10000,
+            epochs=100,
+            total_steps=1000,
             batch_size=7,
-            checkpoint_interval=10000,
+            checkpoint_interval=1000,
             eval_interval=100,
             pipeline="PromptPipeline",
             trainer="AccelerateSFTTrainer",
@@ -109,7 +149,9 @@ def default_sft_config():
         optimizer=OptimizerConfig(
             name="adamw", kwargs=dict(lr=1.0e-4, betas=(0.9, 0.95), eps=1.0e-8, weight_decay=1.0e-6)
         ),
-        scheduler=SchedulerConfig(name="linear"),  # train.total_steps
+        scheduler=SchedulerConfig(
+            name="cosine_annealing", kwargs=dict(T_max=10000, eta_min=1.0e-4)  # train.total_steps
+        ),
         method=SFTConfig(
             name="sftconfig",
             gen_kwargs=dict(max_new_tokens=40, top_k=0, top_p=1.0, do_sample=True),

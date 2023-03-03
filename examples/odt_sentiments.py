@@ -9,8 +9,7 @@ from datasets import load_dataset
 from transformers import pipeline
 
 import trlx
-from trlx.data.default_configs import TRLConfig, default_ppo_config
-from trlx.trainer.accelerate_ppo_trainer import AcceleratePPOTrainer
+from trlx.data.default_configs import TRLConfig, default_odt_config
 
 
 def get_positive_score(scores):
@@ -20,7 +19,7 @@ def get_positive_score(scores):
 
 def main(hparams={}):
     # Merge sweep config with default config if given
-    config = TRLConfig.update(default_ppo_config().to_dict(), hparams)
+    config = TRLConfig.update(default_odt_config().to_dict(), hparams)
 
     if torch.cuda.is_available():
         device = int(os.environ.get("LOCAL_RANK", 0))
@@ -44,25 +43,13 @@ def main(hparams={}):
     imdb = load_dataset("imdb", split="train+test")
     prompts = [" ".join(review.split()[:4]) for review in imdb["text"]]
 
-    trainer: AcceleratePPOTrainer = trlx.train(
+    trainer = trlx.train(
         reward_fn=reward_fn,
         prompts=prompts,
         eval_prompts=["I don't know much about Hungarian underground"] * config.train.batch_size,
         config=config,
     )
-
-    prompt = "At first glance, the movie seemed like a typical cliché-ridden Hollywood blockbuster, with its flashy visuals and predictable storyline. However, upon watching it, I was pleasantly surprised to discover a nuanced and thought-provoking narrative that kept me engaged from beginning to end"
-    token_list = trainer.tokenizer(prompt).input_ids
-    decoded = [trainer.tokenizer.decode(token) for token in token_list]
-    print("Prompt:", decoded)
-    sentiment = reward_fn([prompt,])
-    all_tokens = trainer.tokenizer(prompt, return_tensors="pt").input_ids.to(device)
-    attention_mask = all_tokens.not_equal(trainer.tokenizer.pad_token_id).long().to(device)
-
-    logits, *_, values = trainer.model(all_tokens, attention_mask=attention_mask)
-    print("Value of the prompt:", values)
-    print("Sentiment of the prompt:", sentiment)
-
+    trainer.save_pretrained("reviews-odt")
 
 if __name__ == "__main__":
     main()

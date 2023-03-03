@@ -66,6 +66,23 @@ class FixedKLController:
         pass
 
 
+# ODT Configs
+
+@dataclass
+@register_method
+class ODTConfig(MethodConfig):
+
+    odt_epochs: int
+    num_rollouts: int
+    chunk_size: int
+    odt_epochs: int
+    reward_percentile: float
+    store_size: int
+    ref_mean: Optional[float]
+    ref_std: Optional[float]
+    gen_kwargs: dict
+    gen_experience_kwargs: Optional[dict] = None
+
 # PPO Configs
 
 
