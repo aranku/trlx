@@ -109,9 +109,7 @@ def default_sft_config():
         optimizer=OptimizerConfig(
             name="adamw", kwargs=dict(lr=1.0e-4, betas=(0.9, 0.95), eps=1.0e-8, weight_decay=1.0e-6)
         ),
-        scheduler=SchedulerConfig(
-            name="cosine_annealing", kwargs=dict(T_max=10000, eta_min=1.0e-4)  # train.total_steps
-        ),
+        scheduler=SchedulerConfig(name="linear"),  # train.total_steps
         method=SFTConfig(
             name="sftconfig",
             gen_kwargs=dict(max_new_tokens=40, top_k=0, top_p=1.0, do_sample=True),
